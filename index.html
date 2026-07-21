@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Task Allocation & Dynamic Tracker</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS for Excel Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 p-6 font-sans">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Task Allocator</h1>
+        <p class="text-sm text-slate-500">Veda Solutions • Omni Trade Networks</p>
+      </div>
+      <div class="flex gap-3 mt-4 md:mt-0">
+        <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-sm">
+          📥 Export Excel
+        </button>
+        <button onclick="clearAllData()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-2 rounded-lg text-sm font-medium transition">
+          🗑️ Clear Storage
+        </button>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Add Task -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex gap-2">
+        <input type="text" id="taskInput" placeholder="Enter new Task name..." class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="addTaskColumn()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+          + Add Task
+        </button>
+      </div>
+
+      <!-- Add User -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex gap-2">
+        <input type="text" id="userInput" placeholder="Enter User name..." class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="addUserRow()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+          + Add User
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+      <table class="w-full text-left border-collapse" id="appTable">
+        <thead>
+          <tr class="bg-slate-100 border-b border-slate-200 text-slate-700 text-sm" id="tableHeader">
+            <!-- Headers injected via JS -->
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-slate-200 text-sm">
+          <!-- Rows injected via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const TASK_DURATION_MINUTES = 30;
+
+    // State initialized with LocalStorage
+    let state = JSON.parse(localStorage.getItem('task_allocator_v3')) || {
+      tasks: [],
+      users: []
+    };
+
+    function saveData() {
+      localStorage.setItem('task_allocator_v3', JSON.stringify(state));
+      renderTable();
+    }
+
+    function addTaskColumn() {
+      const input = document.getElementById('taskInput');
+      const val = input.value.trim();
+      if (!val) return;
+      if (state.tasks.includes(val)) {
+        alert('Task already exists!');
+        return;
+      }
+      state.tasks.push(val);
+      input.value = '';
+      saveData();
+    }
+
+    function addUserRow() {
+      const input = document.getElementById('userInput');
+      const val = input.value.trim();
+      if (!val) return;
+      state.users.push({
+        id: Date.now().toString(),
+        name: val,
+        activeTask: null,
+        history: []
+      });
+      input.value = '';
+      saveData();
+    }
+
+    function assignTask(userId, taskBaseName) {
+      const user = state.users.find(u => u.id === userId);
+      if (!user) return;
+
+      // Check if task is occupied by another user
+      const occupiedByUser = state.users.find(u => u.id !== userId && u.activeTask && u.activeTask.baseName === taskBaseName);
+      if (occupiedByUser) {
+        const proceed = confirm(`Warning: "${taskBaseName}" is currently active with user "${occupiedByUser.name}".\n\nDo you want to assign this task to "${user.name}" as well?`);
+        if (!proceed) return;
+      }
+
+      // Check repeat condition
+      const alreadyDone = user.history.some(h => h.taskName.startsWith(taskBaseName));
+      let finalTaskName = taskBaseName;
+
+      if (alreadyDone) {
+        const confirmRepeat = confirm(`User "${user.name}" already completed "${taskBaseName}" previously.\n\nDo you want to re-assign with "- Repeat" tag?`);
+        if (!confirmRepeat) return;
+        finalTaskName = `${taskBaseName} - Repeat`;
+      }
+
+      const now = Date.now();
+      const expiresAt = now + (TASK_DURATION_MINUTES * 60 * 1000);
+
+      user.activeTask = {
+        baseName: taskBaseName,
+        displayName: finalTaskName,
+        assignedAt: now,
+        expiresAt: expiresAt
+      };
+
+      saveData();
+    }
+
+    function completeTask(userId, autoExpired = false) {
+      const user = state.users.find(u => u.id === userId);
+      if (!user || !user.activeTask) return;
+
+      const now = Date.now();
+      let durationMinutes = 0;
+
+      if (autoExpired) {
+        durationMinutes = TASK_DURATION_MINUTES;
+      } else {
+        const elapsedMs = now - user.activeTask.assignedAt;
+        durationMinutes = Math.min(TASK_DURATION_MINUTES, Math.max(1, Math.round(elapsedMs / 60000)));
+      }
+
+      // Record entry in execution history
+      user.history.push({
+        taskName: user.activeTask.displayName,
+        durationMinutes: durationMinutes,
+        completedAt: new Date(now).toLocaleString()
+      });
+
+      user.activeTask = null;
+      saveData();
+    }
+
+    function checkTimers() {
+      const now = Date.now();
+      let updated = false;
+
+      state.users.forEach(u => {
+        if (u.activeTask && now >= u.activeTask.expiresAt) {
+          completeTask(u.id, true);
+          updated = true;
+        }
+      });
+
+      if (!updated) {
+        renderTableTimersOnly();
+      }
+    }
+
+    function getSuggestedTask(userId) {
+      const user = state.users.find(u => u.id === userId);
+      if (!user) return null;
+
+      const currentlyActiveTasks = state.users
+        .filter(u => u.activeTask)
+        .map(u => u.activeTask.baseName);
+
+      let bestChoice = state.tasks.find(t => !currentlyActiveTasks.includes(t) && !user.history.some(h => h.taskName.startsWith(t)));
+
+      if (!bestChoice) {
+        bestChoice = state.tasks.find(t => !currentlyActiveTasks.includes(t));
+      }
+
+      return bestChoice || state.tasks[0];
+    }
+
+    function renderTable() {
+      const headerRow = document.getElementById('tableHeader');
+      const body = document.getElementById('tableBody');
+
+      headerRow.innerHTML = `
+        <th class="p-3 border-r border-slate-200 font-bold">User Name</th>
+        ${state.tasks.map(t => `<th class="p-3 border-r border-slate-200 bg-slate-50">${t}</th>`).join('')}
+        <th class="p-3 border-r border-slate-200 font-bold bg-indigo-50 text-indigo-900">Current Task & Timer</th>
+        <th class="p-3 border-r border-slate-200 font-bold bg-emerald-50 text-emerald-900">Total Tasks</th>
+        <th class="p-3 border-r border-slate-200 font-bold bg-amber-50 text-amber-900">Total Time (Mins)</th>
+        <th class="p-3 font-bold bg-slate-100">Task Sequence / History</th>
+      `;
+
+      body.innerHTML = state.users.map(u => {
+        const suggested = getSuggestedTask(u.id);
+        const totalTasks = u.history.length;
+        const totalMinutes = u.history.reduce((sum, item) => sum + item.durationMinutes, 0);
+
+        return `
+          <tr class="hover:bg-slate-50" id="user-row-${u.id}">
+            <td class="p-3 font-semibold border-r border-slate-200">${u.name}</td>
+            
+            ${state.tasks.map(t => {
+              const isBusyElsewhere = state.users.some(other => other.id !== u.id && other.activeTask?.baseName === t);
+              const isUserActive = u.activeTask?.baseName === t;
+
+              return `
+                <td class="p-3 border-r border-slate-200 text-center">
+                  <button 
+                    onclick="assignTask('${u.id}', '${t}')" 
+                    class="px-2.5 py-1 text-xs rounded font-medium border transition ${
+                      isUserActive 
+                        ? 'bg-amber-100 text-amber-800 border-amber-400 font-bold' 
+                        : isBusyElsewhere 
+                          ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100' 
+                          : 'bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border-slate-200'
+                    }"
+                  >
+                    ${isUserActive ? 'In Progress' : isBusyElsewhere ? '⚠️ Busy Elsewhere' : 'Assign'}
+                  </button>
+                </td>
+              `;
+            }).join('')}
+
+            <td class="p-3 border-r border-slate-200 bg-indigo-50/40">
+              ${u.activeTask ? `
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 bg-indigo-600 text-white font-medium text-xs rounded-md">${u.activeTask.displayName}</span>
+                    <button onclick="completeTask('${u.id}', false)" class="text-xs text-emerald-600 hover:underline font-medium">✓ Complete</button>
+                  </div>
+                  <div class="text-xs font-mono font-bold text-amber-700 flex items-center gap-1">
+                    ⏱️ <span id="timer-${u.id}">--:--</span> left
+                  </div>
+                </div>
+              ` : `
+                <div class="space-y-1">
+                  <span class="text-emerald-600 font-semibold text-xs block">🟢 Free / Idle</span>
+                  ${suggested ? `
+                    <button onclick="assignTask('${u.id}', '${suggested}')" class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-300 px-2 py-0.5 rounded hover:bg-emerald-100">
+                      💡 Suggest: <b>${suggested}</b>
+                    </button>
+                  ` : ''}
+                </div>
+              `}
+            </td>
+
+            <td class="p-3 border-r border-slate-200 text-center font-bold text-slate-700 bg-emerald-50/30">
+              ${totalTasks}
+            </td>
+
+            <td class="p-3 border-r border-slate-200 text-center font-bold text-slate-700 bg-amber-50/30">
+              ${totalMinutes} m
+            </td>
+
+            <td class="p-3 text-xs text-slate-600 bg-slate-50">
+              ${u.history.length > 0 ? u.history.map((h, i) => `<span class="inline-block bg-white border border-slate-200 rounded px-1.5 py-0.5 my-0.5" title="${h.durationMinutes} min(s) on ${h.completedAt}">${i+1}. ${h.taskName} (${h.durationMinutes}m)</span>`).join(' ➔ ') : '<span class="text-slate-400">No tasks executed yet</span>'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderTableTimersOnly();
+    }
+
+    function renderTableTimersOnly() {
+      const now = Date.now();
+      state.users.forEach(u => {
+        if (u.activeTask) {
+          const timerEl = document.getElementById(`timer-${u.id}`);
+          if (timerEl) {
+            const diff = Math.max(0, u.activeTask.expiresAt - now);
+            const mins = Math.floor(diff / 60000);
+            const secs = Math.floor((diff % 60000) / 1000);
+            timerEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+          }
+        }
+      });
+    }
+
+    function exportToExcel() {
+      const exportData = state.users.map(u => {
+        const totalTasks = u.history.length;
+        const totalMinutes = u.history.reduce((sum, item) => sum + item.durationMinutes, 0);
+        const sequenceStr = u.history.map((h, i) => `${i + 1}. ${h.taskName} (${h.durationMinutes}m)`).join(' -> ');
+
+        return {
+          "User Name": u.name,
+          "Current Status": u.activeTask ? `Active: ${u.activeTask.displayName}` : 'Free',
+          "Number of Tasks": totalTasks,
+          "Number of Minutes": totalMinutes,
+          "Task Sequence / History": sequenceStr || 'No History'
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      
+      // Auto-fit column widths
+      worksheet['!cols'] = [
+        { wch: 20 },
+        { wch: 25 },
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 50 }
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Task Allocation Report");
+    //   XLSX.writeFile(workbook, `Task_Allocation_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+      XLSX.writeFile(workbook, `Task_Allocation_Report_${new Date().toISOString().slice(0,10)}_${new Date().toTimeString().slice(0,5).replace(':', '-')}.xlsx`);
+
+    }
+
+    function clearAllData() {
+      if (confirm('Are you sure you want to clear all tasks, users, and history?')) {
+        localStorage.removeItem('task_allocator_v3');
+        state = { tasks: [], users: [] };
+        renderTable();
+      }
+    }
+
+    setInterval(checkTimers, 1000);
+    renderTable();
+  </script>
+</body>
+</html>
