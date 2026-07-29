@@ -135,12 +135,9 @@
     let isEditMode = false;
 
     let state = JSON.parse(localStorage.getItem('task_allocator_v15')) || {
-      tasks: ['Task 1', 'Task 2', 'Task 3', 'Task 4'],
+      tasks: [],
       heldTasks: [],
-      users: [
-        { id: '1', name: 'User A', activeTask: null, history: [] },
-        { id: '2', name: 'User B', activeTask: null, history: [] }
-      ]
+      users: []
     };
 
     if (!state.heldTasks) state.heldTasks = [];
