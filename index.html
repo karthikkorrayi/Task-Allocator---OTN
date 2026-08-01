@@ -3,98 +3,272 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Smart Task Allocation Tracker - Suggestion & Manual Combo</title>
+  <title>Task Allocation Tracker</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- SheetJS for Excel Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar Styling */
+    ::-webkit-scrollbar { height: 6px; width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
 </head>
-<body class="bg-slate-200 text-slate-800 p-3 md:p-6 font-sans antialiased min-h-screen pb-12">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col md:flex-row pb-20 md:pb-6">
 
-  <div class="max-w-7xl mx-auto space-y-4 md:space-y-6">
-    
-    <!-- Top Header & Action Controls -->
-    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-300 gap-4">
+  <!-- ==================== DESKTOP SIDEBAR ==================== -->
+  <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 min-h-screen shrink-0 justify-between p-4 sticky top-0 h-screen">
+    <div class="space-y-6">
+      <!-- App Brand Logo -->
+      <div class="flex items-center gap-3 px-2 py-1 cursor-pointer" onclick="switchTab('dashboard')">
+        <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-brand-500/20">⚡</div>
+        <div>
+          <h2 class="font-extrabold text-slate-900 text-sm tracking-tight leading-tight">Task Allocation</h2>
+          <span class="text-[10px] text-slate-400 font-semibold block">Omni Trade Networks</span>
+        </div>
+      </div>
+
+      <!-- Main Navigation Menu -->
+      <nav class="space-y-1" id="desktopNav">
+        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Dashboard
+        </button>
+        <button onclick="switchTab('users')" data-tab="users" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 100 8.002 4 4 0 000-8.002zM15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          Users
+        </button>
+        <button onclick="switchTab('tasks')" data-tab="tasks" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 022 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          Tasks
+        </button>
+        <button onclick="switchTab('allocations')" data-tab="allocations" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Allocations
+        </button>
+        <button onclick="switchTab('reports')" data-tab="reports" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Reports
+        </button>
+        <button onclick="switchTab('analytics')" data-tab="analytics" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+          Analytics
+        </button>
+        <button onclick="switchTab('settings')" data-tab="settings" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Settings
+        </button>
+      </nav>
+    </div>
+
+    <!-- User Profile Badge Footer -->
+    <div class="border-t border-slate-100 pt-3">
+      <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/60">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs">K</div>
+          <div class="overflow-hidden">
+            <h4 class="text-xs font-bold text-slate-800 truncate">Karthik K.</h4>
+            <span class="text-[10px] text-slate-400 font-semibold block truncate">Admin</span>
+          </div>
+        </div>
+      </div>
+      <p class="text-[9px] text-slate-400 text-center mt-3 font-medium">© 2026 Omni Trade Networks. All rights reserved.</p>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT AREA ==================== -->
+  <main class="flex-1 p-3 md:p-8 space-y-4 md:space-y-6 max-w-7xl mx-auto w-full">
+
+    <!-- Mobile Header -->
+    <header class="flex md:hidden items-center justify-between py-2 border-b border-slate-200 mb-2">
+      <div class="flex items-center gap-3">
+        <div onclick="switchTab('dashboard')" class="cursor-pointer">
+          <h1 class="text-base font-black text-slate-900 flex items-center gap-1.5">
+            <span class="text-brand-600">⚡</span> Task Allocation Tracker
+          </h1>
+          <p class="text-[10px] text-slate-400 font-semibold">Omni Trade Networks</p>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-sm font-bold border border-slate-200">
+          🔔
+        </div>
+        <span class="absolute -top-1 -right-1 bg-brand-600 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">3</span>
+      </div>
+    </header>
+
+    <!-- Desktop Header & Top Actions Toolbar -->
+    <div class="hidden md:flex flex-row justify-between items-center gap-4">
       <div>
-        <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+        <h1 id="pageTitle" class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
           ⚡ Task Allocation Tracker
         </h1>
-        <p class="text-xs md:text-sm text-slate-500 mt-0.5">Veda Solutions • Omni Trade Networks</p>
+        <p class="text-xs text-slate-400 font-semibold mt-0.5">Omni Trade Networks</p>
       </div>
-      
-      <!-- Actions Toolbar -->
-      <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-        
-        <!-- Location Dropdown from Google Sheets -->
-        <select id="locationDropdown" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs md:text-sm font-bold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          <option value="">⏳ Loading Locations...</option>
-        </select>
 
-        <!-- Save to Google Sheets Button -->
-        <button id="saveBtn" onclick="saveToGoogleSheets()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition flex items-center gap-1 shadow-sm">
-          💾 Save to Cloud
+      <div class="flex items-center gap-2.5">
+        <button onclick="exportToExcel()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-brand-500/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Export Excel
         </button>
-
-        <!-- Local Excel Export Button -->
-        <button onclick="exportToExcel()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition flex items-center gap-1 shadow-sm">
-          📥 Export Excel
-        </button>
-
-        <!-- Edit Toggle -->
-        <button id="editToggleBtn" onclick="toggleEditMode()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2.5 rounded-xl text-xs md:text-sm font-bold transition shadow-sm">
+        <button id="editToggleBtn" onclick="toggleEditMode()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
           ✏️ Edit
         </button>
-
-        <!-- Clear Button -->
-        <button onclick="requestClearAll()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-2.5 rounded-xl text-xs md:text-sm font-bold transition">
+        <button onclick="requestClearAll()" class="bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
           🗑️ Clear
         </button>
-
       </div>
     </div>
 
-    <!-- Inputs Control -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-300 flex gap-2">
-        <input type="text" id="taskInput" placeholder="Add new task name..." class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
-        <button onclick="addTaskColumn()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition whitespace-nowrap shadow-sm">
+    <!-- Mobile Action Buttons -->
+    <div class="flex md:hidden items-center justify-between gap-2">
+      <button onclick="exportToExcel()" class="flex-1 bg-brand-600 text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-sm">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Export Excel
+      </button>
+      <button id="editToggleBtnMobile" onclick="toggleEditMode()" class="flex-1 bg-amber-50 text-amber-700 border border-amber-200 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1">
+        ✏️ Edit
+      </button>
+      <button onclick="requestClearAll()" class="flex-1 bg-rose-50 text-rose-600 border border-rose-200 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1">
+        🗑️ Clear
+      </button>
+    </div>
+
+    <!-- Creation Cards Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Add New Task Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
+          <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Add New Task
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input type="text" id="taskInput" placeholder="Task Name" class="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+          <input type="text" id="taskDescInput" placeholder="Task Description (optional)" class="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+        </div>
+        <button onclick="addTaskColumn()" class="w-full bg-brand-600 hover:bg-brand-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-xs">
           + Add Task
         </button>
       </div>
 
-      <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-300 flex gap-2">
-        <input type="text" id="userInput" placeholder="Add new user name..." class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
-        <button onclick="addUserRow()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition whitespace-nowrap shadow-sm">
+      <!-- Add New User Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
+          <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          Add New User
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input type="text" id="userInput" placeholder="User Name" class="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+          <input type="text" id="userRoleInput" placeholder="Role / Designation (optional)" class="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+        </div>
+        <button onclick="addUserRow()" class="w-full bg-brand-600 hover:bg-brand-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-xs">
           + Add User
         </button>
       </div>
     </div>
 
-    <!-- Tasks Pool Overview Section -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-300 shadow-sm space-y-2">
+    <!-- Tasks Pool Card Container -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
       <div class="flex justify-between items-center">
-        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          📦 Tasks Pool (<span id="taskCountHeader">0</span>)
+        <span class="text-xs font-bold text-slate-800 flex items-center gap-2">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          Tasks Pool
         </span>
-        <span class="text-[11px] text-slate-400 font-medium">Click task to toggle Hold/Unhold status</span>
+        <button onclick="switchTab('tasks')" class="text-brand-600 font-bold text-xs hover:underline flex items-center gap-1">View All Tasks →</button>
       </div>
       <div id="tasksPoolContainer" class="flex flex-wrap gap-2 pt-1"></div>
     </div>
 
-    <!-- Dynamic Main Cards Grid Container -->
+    <!-- Dynamic Main Area View Rendered Here -->
     <div id="mainContainer" class="space-y-4"></div>
 
-  </div>
+    <!-- Desktop Bottom Summary Metrics Cards -->
+    <div class="hidden md:grid grid-cols-5 gap-3 pt-2">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 text-brand-600 flex items-center justify-center font-bold text-base">👥</div>
+        <div>
+          <span class="text-[10px] text-slate-400 font-bold uppercase block">Total Users</span>
+          <span id="metricTotalUsers" class="text-lg font-black text-slate-900">0</span>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-base">⚡</div>
+        <div>
+          <span class="text-[10px] text-slate-400 font-bold uppercase block">Busy Users</span>
+          <span id="metricBusyUsers" class="text-lg font-black text-slate-900">0</span>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-base">🟢</div>
+        <div>
+          <span class="text-[10px] text-slate-400 font-bold uppercase block">Free Users</span>
+          <span id="metricFreeUsers" class="text-lg font-black text-slate-900">0</span>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-base">📋</div>
+        <div>
+          <span class="text-[10px] text-slate-400 font-bold uppercase block">Total Tasks</span>
+          <span id="metricTotalTasks" class="text-lg font-black text-slate-900">0</span>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-base">⏸️</div>
+        <div>
+          <span class="text-[10px] text-slate-400 font-bold uppercase block">Tasks on Hold</span>
+          <span id="metricHeldTasks" class="text-lg font-black text-slate-900">0</span>
+        </div>
+      </div>
+    </div>
 
-  <!-- History Modal Popup -->
-  <div id="historyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+  </main>
+
+  <!-- ==================== MOBILE BOTTOM NAVBAR ==================== -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center py-2 px-1 z-40 shadow-lg" id="mobileNav">
+    <button onclick="switchTab('dashboard')" data-tab="dashboard" class="mobile-nav-item flex flex-col items-center gap-0.5">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span class="text-[10px] font-bold">Dashboard</span>
+    </button>
+    <button onclick="switchTab('users')" data-tab="users" class="mobile-nav-item flex flex-col items-center gap-0.5">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 100 8.002 4 4 0 000-8.002zM15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <span class="text-[10px] font-medium">Users</span>
+    </button>
+    <button onclick="switchTab('tasks')" data-tab="tasks" class="mobile-nav-item flex flex-col items-center gap-0.5">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 022 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 022 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <span class="text-[10px] font-medium">Tasks</span>
+    </button>
+    <button onclick="switchTab('allocations')" data-tab="allocations" class="mobile-nav-item flex flex-col items-center gap-0.5">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      <span class="text-[10px] font-medium">Allocations</span>
+    </button>
+    <button onclick="switchTab('reports')" data-tab="reports" class="mobile-nav-item flex flex-col items-center gap-0.5">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+      <span class="text-[10px] font-medium">More</span>
+    </button>
+  </nav>
+
+  <!-- ==================== MODALS ==================== -->
+  <div id="historyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
         <div>
           <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
-            📜 Task History for <span id="historyUserName" class="text-indigo-600">User</span>
+            📜 Task History for <span id="historyUserName" class="text-brand-600">User</span>
           </h3>
-          <p class="text-xs text-slate-500" id="historySummaryText">Completed 0 tasks</p>
+          <p class="text-xs text-slate-400 font-medium" id="historySummaryText">Completed 0 tasks</p>
         </div>
         <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1">✕</button>
       </div>
@@ -107,42 +281,149 @@
     </div>
   </div>
 
-  <!-- Universal Notification Modal -->
-  <div id="customModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+  <div id="customModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-sm w-full p-5 space-y-4">
       <div class="flex items-start gap-3">
-        <div id="modalIcon" class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold shrink-0">💡</div>
+        <div id="modalIcon" class="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center text-lg font-bold shrink-0">💡</div>
         <div class="space-y-1">
           <h3 id="modalTitle" class="text-base font-bold text-slate-900">Notification</h3>
           <p id="modalMessage" class="text-xs text-slate-600 leading-relaxed">Modal message content.</p>
         </div>
       </div>
       <div id="modalInputContainer" class="hidden">
-        <input type="text" id="modalInput" class="w-full px-3.5 py-2 border rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50" placeholder="Type here...">
+        <input type="text" id="modalInput" class="w-full px-3.5 py-2 border rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none bg-slate-50" placeholder="Type here...">
       </div>
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
         <button id="modalCancelBtn" onclick="closeCustomModal(false)" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition hidden">Cancel</button>
-        <button id="modalConfirmBtn" onclick="closeCustomModal(true)" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-sm">OK</button>
+        <button id="modalConfirmBtn" onclick="closeCustomModal(true)" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition shadow-xs">OK</button>
       </div>
     </div>
   </div>
 
+  <!-- ==================== CORE JAVASCRIPT ==================== -->
   <script>
-    // ⚠️ REPLACE THIS STRING WITH YOUR GOOGLE APPS SCRIPT WEB APP DEPLOYMENT URL:
-    const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
-
     const TASK_DURATION_MINUTES = 30;
     let isEditMode = false;
+    let currentTab = 'dashboard';
+    let expandedUsers = {}; 
 
-    let state = JSON.parse(localStorage.getItem('task_allocator_v15')) || {
-      tasks: [],
-      heldTasks: [],
-      users: []
+    const defaultState = {
+      tasks: [
+        "Data Migration", "API Integration", "Bug Fixing", "UI/UX Enhancement", 
+        "Performance Testing", "Documentation", "Client Setup", "Security Audit", 
+        "Database Optimization", "Feature Deployment", "User Training", 
+        "Code Review", "System Monitoring", "Server Maintenance"
+      ],
+      heldTasks: ["API Integration", "Documentation", "Database Optimization"],
+      users: [
+        {
+          id: "u1",
+          name: "Rahul Sharma",
+          role: "Frontend Dev",
+          activeTask: {
+            baseName: "API Integration",
+            displayName: "API Integration",
+            assignedAt: Date.now() - (1*60*1000 + 15*1000),
+            expiresAt: Date.now() + (28*60*1000 + 45*1000)
+          },
+          history: [
+            { baseName: "Bug Fixing", taskName: "Bug Fixing", durationMinutes: 30, completedAt: "10:30 AM" },
+            { baseName: "UI/UX Enhancement", taskName: "UI/UX Enhancement", durationMinutes: 30, completedAt: "11:15 AM" }
+          ]
+        },
+        {
+          id: "u2",
+          name: "Priya Mehta",
+          role: "QA Lead",
+          activeTask: null,
+          history: [
+            { baseName: "Client Setup", taskName: "Client Setup", durationMinutes: 30, completedAt: "09:45 AM" }
+          ]
+        },
+        {
+          id: "u3",
+          name: "Amit Singh",
+          role: "Backend Dev",
+          activeTask: {
+            baseName: "Performance Testing",
+            displayName: "Performance Testing",
+            assignedAt: Date.now() - (1*60*1000 + 15*1000),
+            expiresAt: Date.now() + (28*60*1000 + 45*1000)
+          },
+          history: [
+            { baseName: "Security Audit", taskName: "Security Audit", durationMinutes: 30, completedAt: "08:30 AM" }
+          ]
+        },
+        {
+          id: "u4",
+          name: "Neha Kapoor",
+          role: "UI/UX Designer",
+          activeTask: null,
+          history: []
+        }
+      ]
     };
 
+    let state = JSON.parse(localStorage.getItem('task_allocator_v16')) || defaultState;
     if (!state.heldTasks) state.heldTasks = [];
 
     let modalResolver = null;
+
+    function switchTab(tabName) {
+      currentTab = tabName;
+      updateNavigationStyles();
+      renderView();
+    }
+
+    function updateNavigationStyles() {
+      // Desktop Nav Styling
+      document.querySelectorAll('#desktopNav .nav-item').forEach(btn => {
+        const target = btn.getAttribute('data-tab');
+        if (target === currentTab) {
+          btn.className = 'nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-brand-50 text-brand-600 transition';
+        } else {
+          btn.className = 'nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition';
+        }
+      });
+
+      // Mobile Nav Styling
+      document.querySelectorAll('#mobileNav .mobile-nav-item').forEach(btn => {
+        const target = btn.getAttribute('data-tab');
+        if (target === currentTab) {
+          btn.className = 'mobile-nav-item flex flex-col items-center gap-0.5 text-brand-600 font-bold';
+        } else {
+          btn.className = 'mobile-nav-item flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-700 font-medium';
+        }
+      });
+
+      const titleEl = document.getElementById('pageTitle');
+      if (titleEl) {
+        const tabTitles = {
+          dashboard: '⚡ Task Allocation Tracker',
+          users: '👥 Team Users Directory',
+          tasks: '📋 Tasks Catalog',
+          allocations: '⚡ Real-time Task Allocations',
+          reports: '📜 Work Reports & Logs',
+          analytics: '📊 Analytics & Insights',
+          settings: '⚙️ Workspace Settings'
+        };
+        titleEl.innerText = tabTitles[currentTab] || '⚡ Task Allocation Tracker';
+      }
+    }
+
+    function getInitials(name) {
+      if (!name) return '??';
+      const parts = name.trim().split(' ');
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return name.substring(0, 2).toUpperCase();
+    }
+
+    function getAvatarBgColor(name) {
+      const colors = ['bg-indigo-100 text-indigo-700', 'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700', 'bg-purple-100 text-purple-700', 'bg-rose-100 text-rose-700'];
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      return colors[Math.abs(hash) % colors.length];
+    }
 
     function showModal({ title, message, type = 'alert', defaultValue = '', icon = '💡', confirmText = 'OK', cancelText = 'Cancel' }) {
       return new Promise((resolve) => {
@@ -193,66 +474,9 @@
       }
     }
 
-    async function fetchSheetLocations() {
-      const dropdown = document.getElementById('locationDropdown');
-      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("YOUR_GOOGLE")) {
-        dropdown.innerHTML = `<option value="">⚠️ Set AppScript URL</option>`;
-        return;
-      }
-
-      try {
-        const response = await fetch(GOOGLE_SCRIPT_URL);
-        const data = await response.json();
-
-        if (data.locations && data.locations.length > 0) {
-          dropdown.innerHTML = `<option value="">-- Select Location --</option>` + 
-            data.locations.map(loc => `<option value="${loc}">${loc}</option>`).join('');
-        } else {
-          dropdown.innerHTML = `<option value="">No Location Sheets Found</option>`;
-        }
-      } catch (err) {
-        dropdown.innerHTML = `<option value="">Error Connecting Sheets</option>`;
-      }
-    }
-
-    async function saveToGoogleSheets() {
-      const location = document.getElementById('locationDropdown').value;
-      if (!location) {
-        await showModal({ title: 'Select Location', message: 'Please select a location from the dropdown first!', icon: '⚠️' });
-        return;
-      }
-
-      const saveBtn = document.getElementById('saveBtn');
-      saveBtn.innerText = "⏳ Saving...";
-      saveBtn.disabled = true;
-
-      try {
-        const payload = { location: location, users: state.users };
-
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        await showModal({
-          title: 'Successfully Saved!',
-          message: `Task tracking snapshot updated in Google Sheet under location tab "${location}".`,
-          icon: '✅'
-        });
-
-      } catch (err) {
-        await showModal({ title: 'Save Failed', message: 'Failed to communicate with Google Sheets.', icon: '❌' });
-      } finally {
-        saveBtn.innerText = "💾 Save to Cloud";
-        saveBtn.disabled = false;
-      }
-    }
-
     function exportToExcel() {
       if (state.users.length === 0) {
-        showModal({ title: 'No Data', message: 'No users or data available to export!', icon: '⚠️' });
+        showModal({ title: 'No Data', message: 'No user data available to export!', icon: '⚠️' });
         return;
       }
 
@@ -264,30 +488,33 @@
         return {
           "S.No": idx + 1,
           "User Name": u.name,
+          "Role": u.role || 'N/A',
           "Active Task Status": u.activeTask ? u.activeTask.displayName : 'Free / Idle',
           "Completed Tasks": totalTasks,
-          "Total Minutes": totalMinutes,
+          "Total Minutes Logged": totalMinutes,
           "Completed Tasks History": historySeq || 'No History'
         };
       });
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
-      worksheet['!cols'] = [{ wch: 8 }, { wch: 20 }, { wch: 25 }, { wch: 18 }, { wch: 15 }, { wch: 50 }];
+      worksheet['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 18 }, { wch: 25 }, { wch: 16 }, { wch: 20 }, { wch: 50 }];
 
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Task Summary");
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Task Allocation Summary");
       XLSX.writeFile(workbook, `Task_Allocation_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
     function saveData() {
-      localStorage.setItem('task_allocator_v15', JSON.stringify(state));
+      localStorage.setItem('task_allocator_v16', JSON.stringify(state));
       renderView();
     }
 
     function toggleEditMode() {
       isEditMode = !isEditMode;
-      const btn = document.getElementById('editToggleBtn');
-      btn.innerText = isEditMode ? '✅ Exit' : '✏️ Edit';
+      const btnDesk = document.getElementById('editToggleBtn');
+      const btnMob = document.getElementById('editToggleBtnMobile');
+      if (btnDesk) btnDesk.innerText = isEditMode ? '✅ Done Editing' : '✏️ Edit';
+      if (btnMob) btnMob.innerText = isEditMode ? '✅ Done' : '✏️ Edit';
       renderView();
     }
 
@@ -301,15 +528,19 @@
       }
       state.tasks.push(val);
       input.value = '';
+      document.getElementById('taskDescInput').value = '';
       saveData();
     }
 
     async function addUserRow() {
       const input = document.getElementById('userInput');
+      const roleInput = document.getElementById('userRoleInput');
       const val = input.value.trim();
+      const roleVal = roleInput.value.trim();
       if (!val) return;
-      state.users.push({ id: Date.now().toString(), name: val, activeTask: null, history: [] });
+      state.users.push({ id: Date.now().toString(), name: val, role: roleVal || 'Team Member', activeTask: null, history: [] });
       input.value = '';
+      roleInput.value = '';
       saveData();
     }
 
@@ -359,7 +590,6 @@
       return user.history.filter(h => h.baseName === taskBaseName).length;
     }
 
-    // Logic to calculate smart suggested task for a user
     function getSuggestedTask(user) {
       const availableTasks = state.tasks.filter(t => {
         const isHeld = state.heldTasks.includes(t);
@@ -368,8 +598,6 @@
       });
 
       if (availableTasks.length === 0) return null;
-
-      // Pick task done least amount of times by this user
       availableTasks.sort((a, b) => getTaskCompletionCount(user, a) - getTaskCompletionCount(user, b));
       return availableTasks[0];
     }
@@ -397,7 +625,7 @@
       if (state.heldTasks.includes(taskBaseName)) {
         const confirmHold = await showModal({
           title: 'Task On Hold',
-          message: `"${taskBaseName}" is ON HOLD in pool. Assign anyway?`,
+          message: `"${taskBaseName}" is currently ON HOLD in pool. Assign anyway?`,
           type: 'confirm',
           icon: '⏸️'
         });
@@ -417,10 +645,7 @@
 
       const completedCount = getTaskCompletionCount(user, taskBaseName);
       let displayName = taskBaseName;
-
-      if (completedCount > 0) {
-        displayName = `${taskBaseName} (${completedCount + 1}x)`;
-      }
+      if (completedCount > 0) displayName = `${taskBaseName} (${completedCount + 1}x)`;
 
       const now = Date.now();
       user.activeTask = {
@@ -458,6 +683,11 @@
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
+    function toggleUserExpand(userId) {
+      expandedUsers[userId] = !expandedUsers[userId];
+      renderView();
+    }
+
     function openHistoryModal(userId) {
       const user = state.users.find(u => u.id === userId);
       if (!user) return;
@@ -466,7 +696,7 @@
       document.getElementById('historySummaryText').innerText = `Completed ${user.history.length} tasks • ${totalMins} mins logged`;
 
       const listContainer = document.getElementById('historyListContainer');
-      listContainer.innerHTML = user.history.length === 0 ? `<div class="p-6 text-center text-slate-400 italic text-xs">No history yet.</div>` :
+      listContainer.innerHTML = user.history.length === 0 ? `<div class="p-6 text-center text-slate-400 italic text-xs">No history logged yet.</div>` :
         user.history.map((h, i) => `
           <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-center justify-between">
             <span class="font-bold text-xs text-slate-900">${i + 1}. ${h.taskName} (${h.completedAt})</span>
@@ -481,90 +711,259 @@
       document.getElementById('historyModal').classList.add('hidden');
     }
 
+    /* Renders state synched view depending on active layout menu */
     function renderView() {
-      renderTasksPoolHeader();
+      renderTasksPool();
+      renderMetrics();
+      updateNavigationStyles();
       const container = document.getElementById('mainContainer');
-      
-      container.innerHTML = `
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-          ${state.users.map((u) => {
-            const isAssigned = !!u.activeTask;
-            const totalMins = u.history.reduce((sum, item) => sum + item.durationMinutes, 0);
-            const suggestedTask = getSuggestedTask(u);
 
-            return `
-              <div class="rounded-2xl border ${isAssigned ? 'bg-slate-100 border-indigo-300 shadow-md' : 'bg-white border-slate-200 shadow-sm'} p-3.5 flex flex-col justify-between space-y-3">
-                <div>
-                  <div class="flex justify-between items-center mb-1">
-                    <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${isAssigned ? 'bg-indigo-600 text-white' : 'bg-emerald-100 text-emerald-800'}">
-                      ${isAssigned ? '⚡ BUSY' : '🟢 FREE'}
-                    </span>
-                    <button onclick="openHistoryModal('${u.id}')" class="text-indigo-600 font-bold underline text-[10px]">History (${u.history.length})</button>
-                  </div>
-                  <div onclick="handleUserClick('${u.id}')" class="font-black text-slate-900 text-base truncate">${u.name}</div>
-                  <div class="text-[11px] text-slate-500 font-medium mt-0.5">${totalMins} total mins</div>
-                </div>
+      if (currentTab === 'dashboard' || currentTab === 'allocations') {
+        container.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+            ${state.users.map((u) => {
+              const isAssigned = !!u.activeTask;
+              const totalMins = u.history.reduce((sum, item) => sum + item.durationMinutes, 0);
+              const suggestedTask = getSuggestedTask(u);
+              const initials = getInitials(u.name);
+              const avatarColorClass = getAvatarBgColor(u.name);
+              const isExpandedOnMobile = expandedUsers[u.id] || isAssigned;
 
-                <!-- Active Task Info Box -->
-                <div class="bg-white/80 rounded-xl p-2.5 border border-slate-200 space-y-1">
-                  <div class="text-[9px] font-bold text-slate-400 uppercase">Active Task</div>
-                  ${isAssigned ? `
-                    <div class="px-2.5 py-1 bg-indigo-600 text-white font-bold text-xs rounded-lg break-words">${u.activeTask.displayName}</div>
-                    <div class="text-xs font-mono font-bold text-amber-800 mt-2 flex justify-between items-center">
-                      <span>⏱️ <span id="timer-${u.id}">--:--</span></span>
-                      <button onclick="completeTask('${u.id}')" class="text-[10px] bg-emerald-600 text-white px-2 py-1 rounded-md font-bold hover:bg-emerald-700">Done</button>
+              return `
+                <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3.5 transition h-full">
+                  <!-- Header Area with Fixed Height for Alignment -->
+                  <div class="flex items-center justify-between min-h-[48px]">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                      <div class="w-10 h-10 rounded-full ${avatarColorClass} flex items-center justify-center font-extrabold text-xs shadow-xs shrink-0">
+                        ${initials}
+                      </div>
+                      <div onclick="handleUserClick('${u.id}')" class="cursor-pointer overflow-hidden">
+                        <div class="flex items-center gap-1.5">
+                          <h3 class="font-bold text-slate-900 text-sm hover:text-brand-600 transition truncate" title="${u.name}">${u.name}</h3>
+                          <span class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider shrink-0 ${isAssigned ? 'bg-indigo-50 text-brand-600 border border-brand-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
+                            ${isAssigned ? 'BUSY' : 'FREE'}
+                          </span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium truncate">Logged: <span class="text-slate-600 font-semibold">${totalMins} mins</span></p>
+                      </div>
                     </div>
-                  ` : `<span class="text-emerald-600 font-bold text-xs block py-1">🟢 Ready for task</span>`}
-                </div>
 
-                <!-- Auto-Suggested Task Section -->
-                <div class="bg-amber-50/80 rounded-xl p-2.5 border border-amber-200/80 space-y-1">
-                  <div class="text-[9px] font-bold text-amber-700 uppercase tracking-wider">💡 Suggested Task</div>
-                  ${suggestedTask ? `
-                    <div class="flex items-center justify-between gap-1">
-                      <span class="text-xs font-bold text-slate-800 truncate">${suggestedTask} (${getTaskCompletionCount(u, suggestedTask)}x)</span>
-                      <button onclick="assignTask('${u.id}', '${suggestedTask}')" class="bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold px-2 py-1 rounded-md transition shrink-0">
-                        Assign
+                    <div class="flex items-center gap-1 shrink-0">
+                      <button onclick="openHistoryModal('${u.id}')" class="text-brand-600 font-bold text-xs hover:underline hidden sm:block">History</button>
+                      <button onclick="toggleUserExpand('${u.id}')" class="text-slate-400 p-1 sm:hidden">
+                        <svg class="w-4 h-4 transform ${isExpandedOnMobile ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                       </button>
                     </div>
-                  ` : `<span class="text-[11px] text-slate-400 italic">No task available</span>`}
+                  </div>
+
+                  <!-- Content Area -->
+                  <div class="${isExpandedOnMobile ? 'flex' : 'hidden md:flex'} flex-col space-y-3 flex-1 justify-between">
+                    <!-- Active Task Box with Fixed Height -->
+                    <div class="rounded-xl border ${isAssigned ? 'bg-indigo-50/40 border-brand-200' : 'bg-emerald-50/30 border-emerald-100'} p-3 flex flex-col justify-between min-h-[96px]">
+                      <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="${isAssigned ? 'text-brand-600' : 'text-emerald-500'}">│</span> Active Task
+                      </div>
+
+                      ${isAssigned ? `
+                        <div class="space-y-1">
+                          <div class="text-xs font-bold text-slate-800 leading-tight truncate" title="${u.activeTask.displayName}">${u.activeTask.displayName}</div>
+                          <div class="flex items-center justify-between pt-1">
+                            <span id="timer-${u.id}" class="text-lg font-black text-brand-600 tracking-tight font-mono">--:--</span>
+                            <button onclick="completeTask('${u.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-1 rounded-xl shadow-xs transition flex items-center gap-1">
+                              ✓ Done
+                            </button>
+                          </div>
+                        </div>
+                      ` : `
+                        <div class="flex items-center justify-between py-1">
+                          <div>
+                            <span class="text-xs font-bold text-slate-600 block">No Active Task</span>
+                            <span class="text-lg font-black text-emerald-500 font-mono tracking-tight">00:00</span>
+                          </div>
+                          <button disabled class="bg-emerald-100 text-emerald-400 font-bold text-xs px-3 py-1 rounded-xl cursor-not-allowed flex items-center gap-1">
+                            ✓ Done
+                          </button>
+                        </div>
+                      `}
+                    </div>
+
+                    <!-- AI Suggested Task Box -->
+                    <div class="rounded-xl bg-amber-50/60 border border-amber-200/80 p-3 flex items-center justify-between gap-2 h-[58px]">
+                      <div class="overflow-hidden">
+                        <div class="text-[9px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1">
+                          <span>✨</span> Suggested Task (AI)
+                        </div>
+                        <div class="text-xs font-bold text-slate-800 truncate mt-0.5" title="${suggestedTask ? suggestedTask : 'No tasks available'}">
+                          ${suggestedTask ? suggestedTask : 'No tasks available'}
+                        </div>
+                      </div>
+                      ${suggestedTask ? `
+                        <button onclick="assignTask('${u.id}', '${suggestedTask}')" class="border border-amber-300 bg-amber-100/60 hover:bg-amber-200 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-xl transition shrink-0">
+                          Assign
+                        </button>
+                      ` : ''}
+                    </div>
+
+                    <!-- Manual Selection Dropdown -->
+                    <div class="space-y-1">
+                      <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                        <span>🎯</span> Manual Selection
+                      </div>
+                      <div class="relative">
+                        <select onchange="assignTask('${u.id}', this.value); this.value='';" class="w-full text-xs font-semibold bg-white border border-slate-200 rounded-xl p-2.5 pr-8 focus:ring-2 focus:ring-brand-500 focus:outline-none appearance-none text-slate-700 truncate">
+                          <option value="">Select a task to assign...</option>
+                          ${state.tasks.map(t => {
+                            const doneCount = getTaskCompletionCount(u, t);
+                            const busyUser = state.users.find(other => other.id !== u.id && other.activeTask?.baseName === t);
+                            const isHeld = state.heldTasks.includes(t);
+
+                            let label = `${t}${doneCount > 0 ? ` (${doneCount}x)` : ''}`;
+                            if (isHeld) label += ' [HELD]';
+                            if (busyUser) label += ` [Busy: ${busyUser.name}]`;
+
+                            return `<option value="${t}">${label}</option>`;
+                          }).join('')}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2.5 pointer-events-none text-slate-400 text-xs">▼</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="block sm:hidden border-t border-slate-100 pt-2">
+                    <button onclick="openHistoryModal('${u.id}')" class="text-brand-600 font-bold text-xs w-full text-center">View History (${u.history.length})</button>
+                  </div>
                 </div>
-
-                <!-- Manual Allocation Dropdown Section -->
-                <div class="bg-indigo-50/80 rounded-xl p-2.5 border border-indigo-100 space-y-1.5">
-                  <div class="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">🎯 Manual Selection</div>
-                  <select onchange="assignTask('${u.id}', this.value); this.value='';" class="w-full text-xs font-bold bg-white border border-indigo-200 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-2xs">
-                    <option value="">-- Choose Task --</option>
-                    ${state.tasks.map(t => {
-                      const doneCount = getTaskCompletionCount(u, t);
-                      const busyUser = state.users.find(other => other.id !== u.id && other.activeTask?.baseName === t);
-                      const isHeld = state.heldTasks.includes(t);
-
-                      let label = `${t} (Done ${doneCount}x)`;
-                      if (isHeld) label += ' [HELD]';
-                      if (busyUser) label += ` [Busy: ${busyUser.name}]`;
-
-                      return `<option value="${t}">${label}</option>`;
-                    }).join('')}
-                  </select>
-                </div>
-
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else if (currentTab === 'users') {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+            <h2 class="text-base font-bold text-slate-900">Users Directory (${state.users.length})</h2>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+                    <th class="p-3">User</th>
+                    <th class="p-3">Role</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Current Task</th>
+                    <th class="p-3">Tasks Completed</th>
+                    <th class="p-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${state.users.map(u => `
+                    <tr>
+                      <td class="p-3 font-bold text-slate-900">${u.name}</td>
+                      <td class="p-3 text-slate-500">${u.role || 'Member'}</td>
+                      <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.activeTask ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${u.activeTask ? 'BUSY' : 'FREE'}</span></td>
+                      <td class="p-3 font-medium">${u.activeTask ? u.activeTask.displayName : '-'}</td>
+                      <td class="p-3 font-bold">${u.history.length}</td>
+                      <td class="p-3"><button onclick="openHistoryModal('${u.id}')" class="text-brand-600 font-bold hover:underline">History</button></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } else if (currentTab === 'tasks') {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+            <h2 class="text-base font-bold text-slate-900">Task Inventory (${state.tasks.length})</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              ${state.tasks.map(t => {
+                const isHeld = state.heldTasks.includes(t);
+                const assignedUser = state.users.find(u => u.activeTask?.baseName === t);
+                return `
+                  <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <div>
+                      <div class="font-bold text-xs text-slate-900">${t}</div>
+                      <div class="text-[10px] text-slate-400 font-semibold">${assignedUser ? `Assigned: ${assignedUser.name}` : isHeld ? 'Status: On Hold' : 'Status: Ready'}</div>
+                    </div>
+                    <button onclick="toggleTaskPoolHold('${t}')" class="text-xs px-2.5 py-1 font-bold rounded-lg ${isHeld ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'}">
+                      ${isHeld ? 'Unhold' : 'Hold'}
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      } else if (currentTab === 'reports' || currentTab === 'analytics') {
+        const totalCompleted = state.users.reduce((sum, u) => sum + u.history.length, 0);
+        const totalMinutesLogged = state.users.reduce((sum, u) => sum + u.history.reduce((m, h) => m + h.durationMinutes, 0), 0);
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+            <h2 class="text-base font-bold text-slate-900">Activity & Performance Overview</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="p-4 rounded-xl bg-brand-50 border border-brand-100">
+                <span class="text-xs text-brand-600 font-bold block">Completed Tasks</span>
+                <span class="text-2xl font-black text-slate-900">${totalCompleted}</span>
               </div>
-            `;
-          }).join('')}
-        </div>
-      `;
+              <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+                <span class="text-xs text-emerald-600 font-bold block">Total Minutes Logged</span>
+                <span class="text-2xl font-black text-slate-900">${totalMinutesLogged} mins</span>
+              </div>
+              <div class="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                <span class="text-xs text-amber-600 font-bold block">Active Workstreams</span>
+                <span class="text-2xl font-black text-slate-900">${state.users.filter(u => u.activeTask).length}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (currentTab === 'settings') {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 max-w-xl">
+            <h2 class="text-base font-bold text-slate-900">Workspace Settings</h2>
+            <div class="space-y-3 text-xs">
+              <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                <span>Default Task Duration</span>
+                <span class="font-bold">30 Minutes</span>
+              </div>
+              <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                <span>Organization Name</span>
+                <span class="font-bold">Omni Trade Networks</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       renderTimersOnly();
     }
 
-    function renderTasksPoolHeader() {
+    function renderTasksPool() {
       const poolEl = document.getElementById('tasksPoolContainer');
-      document.getElementById('taskCountHeader').innerText = state.tasks.length;
-      poolEl.innerHTML = state.tasks.map((t, idx) => `
-        <button onclick="handleTaskClick('${t}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border ${state.heldTasks.includes(t) ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-slate-100 text-slate-700 border-slate-200'}">
-          ${idx + 1}. ${t} ${state.heldTasks.includes(t) ? '(HELD)' : ''}
-        </button>
-      `).join('');
+      poolEl.innerHTML = state.tasks.map((t) => {
+        const isHeld = state.heldTasks.includes(t);
+        return `
+          <button onclick="handleTaskClick('${t}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 shadow-2xs ${
+            isHeld 
+              ? 'bg-amber-50 text-slate-700 border-amber-200 hover:bg-amber-100' 
+              : 'bg-brand-50/50 text-brand-700 border-brand-100 hover:bg-brand-100/60'
+          }">
+            <span>${t}</span>
+            ${isHeld ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-400 text-amber-950 uppercase">HELD</span>' : ''}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderMetrics() {
+      const totalUsers = state.users.length;
+      const busyUsers = state.users.filter(u => !!u.activeTask).length;
+      const freeUsers = totalUsers - busyUsers;
+      const totalTasks = state.tasks.length;
+      const heldTasks = state.heldTasks.length;
+
+      document.getElementById('metricTotalUsers').innerText = totalUsers;
+      document.getElementById('metricBusyUsers').innerText = busyUsers;
+      document.getElementById('metricFreeUsers').innerText = freeUsers;
+      document.getElementById('metricTotalTasks').innerText = totalTasks;
+      document.getElementById('metricHeldTasks').innerText = heldTasks;
     }
 
     function renderTimersOnly() {
@@ -579,14 +978,12 @@
     async function requestClearAll() {
       const confirmClear = await showModal({ title: 'Clear Data', message: 'Clear all tasks, users, and history?', type: 'confirm', icon: '🗑️' });
       if (confirmClear) {
-        localStorage.removeItem('task_allocator_v15');
         state = { tasks: [], heldTasks: [], users: [] };
-        renderView();
+        saveData();
       }
     }
 
     setInterval(renderTimersOnly, 1000);
-    fetchSheetLocations();
     renderView();
   </script>
 </body>
