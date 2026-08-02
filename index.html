@@ -25,12 +25,24 @@
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Toast Animation */
+    @keyframes slideDown {
+      0% { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-toast {
+      animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col md:flex-row pb-20 md:pb-6">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col md:flex-row pb-20 md:pb-6 relative">
+
+  <!-- ==================== FLOATING TOP TOAST CONTAINER ==================== -->
+  <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-11/12 max-w-sm pointer-events-none"></div>
 
   <!-- ==================== DESKTOP SIDEBAR ==================== -->
-  <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 min-h-screen shrink-0 justify-between p-4 sticky top-0 h-screen">
+  <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 min-h-screen shrink-0 justify-between p-4 sticky top-0 h-screen z-10">
     <div class="space-y-6">
       <!-- App Brand Logo -->
       <div class="flex items-center gap-3 px-2 py-1 cursor-pointer" onclick="switchTab('dashboard')">
@@ -90,7 +102,7 @@
   </aside>
 
   <!-- ==================== MAIN CONTENT AREA ==================== -->
-  <main class="flex-1 p-3 md:p-8 space-y-4 md:space-y-6 max-w-7xl mx-auto w-full">
+  <main class="flex-1 p-3 md:p-8 space-y-4 md:space-y-6 max-w-7xl mx-auto w-full relative">
 
     <!-- Mobile Header -->
     <header class="flex md:hidden items-center justify-between py-2 border-b border-slate-200 mb-2">
@@ -102,11 +114,12 @@
           <p class="text-[10px] text-slate-400 font-semibold">Omni Trade Networks</p>
         </div>
       </div>
+      <!-- Interactive Notification Bell (Mobile) -->
       <div class="relative">
-        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-sm font-bold border border-slate-200">
+        <button onclick="toggleNotificationMenu()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 text-sm font-bold border border-slate-200 focus:outline-none hover:bg-slate-200 transition">
           🔔
-        </div>
-        <span class="absolute -top-1 -right-1 bg-brand-600 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">3</span>
+        </button>
+        <span id="notifBadgeMobile" class="absolute -top-1 -right-1 bg-brand-600 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
       </div>
     </header>
 
@@ -120,6 +133,14 @@
       </div>
 
       <div class="flex items-center gap-2.5">
+        <!-- Interactive Notification Bell (Desktop) -->
+        <div class="relative">
+          <button onclick="toggleNotificationMenu()" class="w-10 h-10 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 text-base font-bold transition shadow-xs">
+            🔔
+          </button>
+          <span id="notifBadgeDesktop" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-xs border-2 border-white hidden">0</span>
+        </div>
+
         <button onclick="exportToExcel()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-brand-500/10">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           Export Excel
@@ -130,6 +151,19 @@
         <button onclick="requestClearAll()" class="bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
           🗑️ Clear
         </button>
+      </div>
+    </div>
+
+    <!-- Notification Dropdown Panel -->
+    <div id="notifDropdown" class="hidden absolute right-3 md:right-8 top-12 md:top-20 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-40 p-4 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🔔</span> Notifications & Activity Log
+        </h3>
+        <button onclick="clearAllNotifications()" class="text-[10px] font-bold text-slate-400 hover:text-rose-600 transition">Clear All</button>
+      </div>
+      <div id="notifList" class="max-h-72 overflow-y-auto space-y-2 pr-1">
+        <!-- Dynamic Notifications Rendered Here -->
       </div>
     </div>
 
@@ -237,7 +271,7 @@
   </main>
 
   <!-- ==================== MOBILE BOTTOM NAVBAR ==================== -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center py-2 px-1 z-40 shadow-lg" id="mobileNav">
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center py-2 px-1 z-30 shadow-lg" id="mobileNav">
     <button onclick="switchTab('dashboard')" data-tab="dashboard" class="mobile-nav-item flex flex-col items-center gap-0.5">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
       <span class="text-[10px] font-bold">Dashboard</span>
@@ -247,7 +281,7 @@
       <span class="text-[10px] font-medium">Users</span>
     </button>
     <button onclick="switchTab('tasks')" data-tab="tasks" class="mobile-nav-item flex flex-col items-center gap-0.5">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 022 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 022 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 022 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
       <span class="text-[10px] font-medium">Tasks</span>
     </button>
     <button onclick="switchTab('allocations')" data-tab="allocations" class="mobile-nav-item flex flex-col items-center gap-0.5">
@@ -306,8 +340,10 @@
     let isEditMode = false;
     let currentTab = 'dashboard';
     let expandedUsers = {}; 
+    let dismissedNotifs = [];
 
     const defaultState = {
+      notifications: [],
       tasks: [
         "Data Migration", "API Integration", "Bug Fixing", "UI/UX Enhancement", 
         "Performance Testing", "Documentation", "Client Setup", "Security Audit", 
@@ -364,10 +400,165 @@
       ]
     };
 
-    let state = JSON.parse(localStorage.getItem('task_allocator_v16')) || defaultState;
+    let state = JSON.parse(localStorage.getItem('task_allocator_v17')) || defaultState;
     if (!state.heldTasks) state.heldTasks = [];
+    if (!state.notifications) state.notifications = [];
 
     let modalResolver = null;
+
+    /* Functional Notification Logger */
+    function pushNotification(type, icon, title, message) {
+      if (!state.notifications) state.notifications = [];
+      const newNotif = {
+        id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        type: type,
+        icon: icon,
+        title: title,
+        message: message,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      
+      state.notifications.unshift(newNotif);
+      showToast(newNotif);
+      saveData();
+    }
+
+    /* Top Floating Toast Notification Banner Display */
+    function showToast(notif) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      
+      // Color Themes for Toast Banners based on Type
+      const typeStyles = {
+        success: 'bg-emerald-900/90 text-white border-emerald-500 shadow-emerald-900/20',
+        rose: 'bg-rose-900/90 text-white border-rose-500 shadow-rose-900/20',
+        warning: 'bg-amber-900/90 text-white border-amber-500 shadow-amber-900/20',
+        info: 'bg-slate-900/90 text-white border-brand-500 shadow-slate-900/20'
+      };
+
+      const styleClass = typeStyles[notif.type] || typeStyles.info;
+
+      toast.className = `pointer-events-auto animate-toast border backdrop-blur-md px-3.5 py-2.5 rounded-2xl shadow-xl flex items-center justify-between gap-3 text-xs font-semibold ${styleClass}`;
+      toast.innerHTML = `
+        <div class="flex items-center gap-2.5 overflow-hidden">
+          <span class="text-base shrink-0">${notif.icon || '🔔'}</span>
+          <div class="truncate">
+            <div class="font-extrabold text-[11px] leading-tight truncate">${notif.title}</div>
+            <div class="text-[10px] opacity-90 truncate font-normal">${notif.message}</div>
+          </div>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white font-bold text-xs p-1 shrink-0">✕</button>
+      `;
+
+      container.appendChild(toast);
+
+      // Auto-dismiss after 3 seconds
+      setTimeout(() => {
+        if (toast && toast.parentElement) {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-10px)';
+          toast.style.transition = 'all 0.3s ease';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 3000);
+    }
+
+    function getSystemNotifications() {
+      let alerts = [];
+
+      // Add functional action history alerts stored in state
+      (state.notifications || []).forEach(n => {
+        alerts.push(n);
+      });
+
+      // System Alerts: Tasks on hold
+      state.heldTasks.forEach(t => {
+        alerts.push({
+          id: `hold-${t}`,
+          type: 'warning',
+          icon: '⏸️',
+          title: 'Task On Hold',
+          message: `"${t}" is currently paused in task pool.`,
+          time: 'Active'
+        });
+      });
+
+      // System Alerts: Tasks expiring soon (less than 5 mins)
+      state.users.forEach(u => {
+        if (u.activeTask) {
+          const diff = u.activeTask.expiresAt - Date.now();
+          if (diff < 5 * 60 * 1000 && diff > 0) {
+            alerts.push({
+              id: `expire-${u.id}`,
+              type: 'time',
+              icon: '⏳',
+              title: 'Task Expiring Soon',
+              message: `${u.name}'s task "${u.activeTask.displayName}" ends in < 5 mins.`,
+              time: 'Urgent'
+            });
+          }
+        }
+      });
+
+      return alerts.filter(a => !dismissedNotifs.includes(a.id));
+    }
+
+    function toggleNotificationMenu() {
+      const dropdown = document.getElementById('notifDropdown');
+      dropdown.classList.toggle('hidden');
+      renderNotifications();
+    }
+
+    function dismissNotification(id) {
+      dismissedNotifs.push(id);
+      renderNotifications();
+    }
+
+    function clearAllNotifications() {
+      const alerts = getSystemNotifications();
+      alerts.forEach(a => dismissedNotifs.push(a.id));
+      state.notifications = [];
+      saveData();
+      renderNotifications();
+    }
+
+    function renderNotifications() {
+      const notifs = getSystemNotifications();
+      const badgeDesk = document.getElementById('notifBadgeDesktop');
+      const badgeMob = document.getElementById('notifBadgeMobile');
+      const notifList = document.getElementById('notifList');
+
+      if (notifs.length > 0) {
+        badgeDesk.innerText = notifs.length;
+        badgeMob.innerText = notifs.length;
+        badgeDesk.classList.remove('hidden');
+        badgeMob.classList.remove('hidden');
+      } else {
+        badgeDesk.classList.add('hidden');
+        badgeMob.classList.add('hidden');
+      }
+
+      if (notifList) {
+        if (notifs.length === 0) {
+          notifList.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs italic">No active system alerts or notifications.</div>`;
+        } else {
+          notifList.innerHTML = notifs.map(n => `
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-start justify-between gap-2 text-xs">
+              <div>
+                <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>${n.icon || '🔔'}</span> ${n.title}
+                  <span class="text-[9px] text-slate-400 font-semibold ml-auto">${n.time || ''}</span>
+                </div>
+                <div class="text-[11px] text-slate-600 mt-0.5 leading-snug">${n.message}</div>
+              </div>
+              <button onclick="dismissNotification('${n.id}')" class="text-slate-400 hover:text-slate-600 font-bold p-1 text-xs shrink-0">✕</button>
+            </div>
+          `).join('');
+        }
+      }
+    }
 
     function switchTab(tabName) {
       currentTab = tabName;
@@ -376,7 +567,6 @@
     }
 
     function updateNavigationStyles() {
-      // Desktop Nav Styling
       document.querySelectorAll('#desktopNav .nav-item').forEach(btn => {
         const target = btn.getAttribute('data-tab');
         if (target === currentTab) {
@@ -386,7 +576,6 @@
         }
       });
 
-      // Mobile Nav Styling
       document.querySelectorAll('#mobileNav .mobile-nav-item').forEach(btn => {
         const target = btn.getAttribute('data-tab');
         if (target === currentTab) {
@@ -502,10 +691,12 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Task Allocation Summary");
       XLSX.writeFile(workbook, `Task_Allocation_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+      pushNotification('info', '📊', 'Report Exported', 'Exported Task Allocation Report to Excel.');
     }
 
     function saveData() {
-      localStorage.setItem('task_allocator_v16', JSON.stringify(state));
+      localStorage.setItem('task_allocator_v17', JSON.stringify(state));
       renderView();
     }
 
@@ -529,6 +720,8 @@
       state.tasks.push(val);
       input.value = '';
       document.getElementById('taskDescInput').value = '';
+      
+      pushNotification('success', '📋', 'New Task Added', `Task "${val}" was added to the task pool.`);
       saveData();
     }
 
@@ -541,15 +734,28 @@
       state.users.push({ id: Date.now().toString(), name: val, role: roleVal || 'Team Member', activeTask: null, history: [] });
       input.value = '';
       roleInput.value = '';
+      
+      pushNotification('success', '👤', 'New User Created', `User "${val}" (${roleVal || 'Team Member'}) was added.`);
       saveData();
     }
 
     function toggleTaskPoolHold(taskName) {
+      let isNowHeld = false;
       if (state.heldTasks.includes(taskName)) {
         state.heldTasks = state.heldTasks.filter(t => t !== taskName);
+        isNowHeld = false;
       } else {
         state.heldTasks.push(taskName);
+        isNowHeld = true;
       }
+
+      pushNotification(
+        isNowHeld ? 'warning' : 'info', 
+        isNowHeld ? '⏸️' : '▶️', 
+        isNowHeld ? 'Task Placed on Hold' : 'Task Released from Hold', 
+        `Task "${taskName}" was ${isNowHeld ? 'placed on hold' : 'released and ready for assignment'}.`
+      );
+
       saveData();
     }
 
@@ -564,9 +770,11 @@
       if (trimmed === '') {
         state.tasks = state.tasks.filter(t => t !== taskName);
         state.heldTasks = state.heldTasks.filter(t => t !== taskName);
+        pushNotification('rose', '🗑️', 'Task Removed', `Task "${taskName}" was deleted.`);
       } else {
         const idx = state.tasks.indexOf(taskName);
         if (idx !== -1) state.tasks[idx] = trimmed;
+        pushNotification('info', '✏️', 'Task Updated', `Task renamed from "${taskName}" to "${trimmed}".`);
       }
       saveData();
     }
@@ -580,8 +788,11 @@
       const trimmed = res.trim();
       if (trimmed === '') {
         state.users = state.users.filter(u => u.id !== userId);
+        pushNotification('rose', '🗑️', 'User Removed', `User "${user.name}" was deleted.`);
       } else {
+        const oldName = user.name;
         user.name = trimmed;
+        pushNotification('info', '✏️', 'User Renamed', `User updated from "${oldName}" to "${trimmed}".`);
       }
       saveData();
     }
@@ -655,6 +866,7 @@
         expiresAt: now + (TASK_DURATION_MINUTES * 60 * 1000)
       };
 
+      pushNotification('info', '⚡', 'Task Assigned', `"${displayName}" was assigned to ${user.name}.`);
       saveData();
     }
 
@@ -665,14 +877,18 @@
       const elapsedMs = Date.now() - user.activeTask.assignedAt;
       const durationMinutes = Math.min(TASK_DURATION_MINUTES, Math.max(1, Math.round(elapsedMs / 60000)));
 
+      const completedTaskName = user.activeTask.displayName;
+
       user.history.push({
         baseName: user.activeTask.baseName,
-        taskName: user.activeTask.displayName,
+        taskName: completedTaskName,
         durationMinutes: durationMinutes,
         completedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
 
       user.activeTask = null;
+
+      pushNotification('success', '✅', 'Task Completed', `${user.name} completed "${completedTaskName}" in ${durationMinutes} mins.`);
       saveData();
     }
 
@@ -711,16 +927,16 @@
       document.getElementById('historyModal').classList.add('hidden');
     }
 
-    /* Renders state synched view depending on active layout menu */
     function renderView() {
       renderTasksPool();
       renderMetrics();
+      renderNotifications();
       updateNavigationStyles();
       const container = document.getElementById('mainContainer');
 
       if (currentTab === 'dashboard' || currentTab === 'allocations') {
         container.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             ${state.users.map((u) => {
               const isAssigned = !!u.activeTask;
               const totalMins = u.history.reduce((sum, item) => sum + item.durationMinutes, 0);
@@ -730,46 +946,45 @@
               const isExpandedOnMobile = expandedUsers[u.id] || isAssigned;
 
               return `
-                <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3.5 transition h-full">
-                  <!-- Header Area with Fixed Height for Alignment -->
-                  <div class="flex items-center justify-between min-h-[48px]">
-                    <div class="flex items-center gap-3 overflow-hidden">
-                      <div class="w-10 h-10 rounded-full ${avatarColorClass} flex items-center justify-center font-extrabold text-xs shadow-xs shrink-0">
-                        ${initials}
-                      </div>
-                      <div onclick="handleUserClick('${u.id}')" class="cursor-pointer overflow-hidden">
-                        <div class="flex items-center gap-1.5">
-                          <h3 class="font-bold text-slate-900 text-sm hover:text-brand-600 transition truncate" title="${u.name}">${u.name}</h3>
-                          <span class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider shrink-0 ${isAssigned ? 'bg-indigo-50 text-brand-600 border border-brand-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
-                            ${isAssigned ? 'BUSY' : 'FREE'}
-                          </span>
+                <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col justify-between space-y-3.5 transition">
+                  <div>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full ${avatarColorClass} flex items-center justify-center font-extrabold text-xs shadow-xs">
+                          ${initials}
                         </div>
-                        <p class="text-[11px] text-slate-400 font-medium truncate">Logged: <span class="text-slate-600 font-semibold">${totalMins} mins</span></p>
+                        <div onclick="handleUserClick('${u.id}')" class="cursor-pointer">
+                          <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-slate-900 text-sm hover:text-brand-600 transition truncate">${u.name}</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${isAssigned ? 'bg-indigo-50 text-brand-600 border border-brand-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}">
+                              ${isAssigned ? '⚡ BUSY' : '🟢 FREE'}
+                            </span>
+                          </div>
+                          <p class="text-[11px] text-slate-400 font-medium">Total Logged: <span class="text-slate-600 font-semibold">${totalMins} mins</span></p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div class="flex items-center gap-1 shrink-0">
-                      <button onclick="openHistoryModal('${u.id}')" class="text-brand-600 font-bold text-xs hover:underline hidden sm:block">History</button>
-                      <button onclick="toggleUserExpand('${u.id}')" class="text-slate-400 p-1 sm:hidden">
-                        <svg class="w-4 h-4 transform ${isExpandedOnMobile ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                      </button>
+                      <div class="flex items-center gap-1">
+                        <button onclick="openHistoryModal('${u.id}')" class="text-brand-600 font-bold text-xs hover:underline hidden sm:block">History</button>
+                        <button onclick="toggleUserExpand('${u.id}')" class="text-slate-400 p-1 sm:hidden">
+                          <svg class="w-4 h-4 transform ${isExpandedOnMobile ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  <!-- Content Area -->
-                  <div class="${isExpandedOnMobile ? 'flex' : 'hidden md:flex'} flex-col space-y-3 flex-1 justify-between">
-                    <!-- Active Task Box with Fixed Height -->
-                    <div class="rounded-xl border ${isAssigned ? 'bg-indigo-50/40 border-brand-200' : 'bg-emerald-50/30 border-emerald-100'} p-3 flex flex-col justify-between min-h-[96px]">
+                  <div class="${isExpandedOnMobile ? 'block' : 'hidden md:block'} space-y-3">
+                    <div class="rounded-xl border ${isAssigned ? 'bg-indigo-50/40 border-brand-200' : 'bg-emerald-50/30 border-emerald-100'} p-3 space-y-2">
                       <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                         <span class="${isAssigned ? 'text-brand-600' : 'text-emerald-500'}">│</span> Active Task
                       </div>
 
                       ${isAssigned ? `
-                        <div class="space-y-1">
-                          <div class="text-xs font-bold text-slate-800 leading-tight truncate" title="${u.activeTask.displayName}">${u.activeTask.displayName}</div>
+                        <div class="space-y-2">
+                          <div class="text-xs font-bold text-slate-800 leading-tight">${u.activeTask.displayName}</div>
                           <div class="flex items-center justify-between pt-1">
-                            <span id="timer-${u.id}" class="text-lg font-black text-brand-600 tracking-tight font-mono">--:--</span>
-                            <button onclick="completeTask('${u.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-1 rounded-xl shadow-xs transition flex items-center gap-1">
+                            <span id="timer-${u.id}" class="text-xl font-black text-brand-600 tracking-tight font-mono">--:--</span>
+                            <button onclick="completeTask('${u.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition flex items-center gap-1">
                               ✓ Done
                             </button>
                           </div>
@@ -778,39 +993,37 @@
                         <div class="flex items-center justify-between py-1">
                           <div>
                             <span class="text-xs font-bold text-slate-600 block">No Active Task</span>
-                            <span class="text-lg font-black text-emerald-500 font-mono tracking-tight">00:00</span>
+                            <span class="text-xl font-black text-emerald-500 font-mono tracking-tight">00:00</span>
                           </div>
-                          <button disabled class="bg-emerald-100 text-emerald-400 font-bold text-xs px-3 py-1 rounded-xl cursor-not-allowed flex items-center gap-1">
+                          <button disabled class="bg-emerald-100 text-emerald-400 font-bold text-xs px-3.5 py-1.5 rounded-xl cursor-not-allowed flex items-center gap-1">
                             ✓ Done
                           </button>
                         </div>
                       `}
                     </div>
 
-                    <!-- AI Suggested Task Box -->
-                    <div class="rounded-xl bg-amber-50/60 border border-amber-200/80 p-3 flex items-center justify-between gap-2 h-[58px]">
+                    <div class="rounded-xl bg-amber-50/60 border border-amber-200/80 p-3 flex items-center justify-between gap-2">
                       <div class="overflow-hidden">
                         <div class="text-[9px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1">
                           <span>✨</span> Suggested Task (AI)
                         </div>
-                        <div class="text-xs font-bold text-slate-800 truncate mt-0.5" title="${suggestedTask ? suggestedTask : 'No tasks available'}">
+                        <div class="text-xs font-bold text-slate-800 truncate mt-0.5">
                           ${suggestedTask ? suggestedTask : 'No tasks available'}
                         </div>
                       </div>
                       ${suggestedTask ? `
-                        <button onclick="assignTask('${u.id}', '${suggestedTask}')" class="border border-amber-300 bg-amber-100/60 hover:bg-amber-200 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-xl transition shrink-0">
+                        <button onclick="assignTask('${u.id}', '${suggestedTask}')" class="border border-amber-300 bg-amber-100/60 hover:bg-amber-200 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-xl transition shrink-0">
                           Assign
                         </button>
                       ` : ''}
                     </div>
 
-                    <!-- Manual Selection Dropdown -->
                     <div class="space-y-1">
                       <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                         <span>🎯</span> Manual Selection
                       </div>
                       <div class="relative">
-                        <select onchange="assignTask('${u.id}', this.value); this.value='';" class="w-full text-xs font-semibold bg-white border border-slate-200 rounded-xl p-2.5 pr-8 focus:ring-2 focus:ring-brand-500 focus:outline-none appearance-none text-slate-700 truncate">
+                        <select onchange="assignTask('${u.id}', this.value); this.value='';" class="w-full text-xs font-semibold bg-white border border-slate-200 rounded-xl p-2.5 pr-8 focus:ring-2 focus:ring-brand-500 focus:outline-none appearance-none text-slate-700">
                           <option value="">Select a task to assign...</option>
                           ${state.tasks.map(t => {
                             const doneCount = getTaskCompletionCount(u, t);
@@ -973,12 +1186,14 @@
           if (timerEl) timerEl.innerText = getFormattedTimeRemaining(u.activeTask.expiresAt);
         }
       });
+      renderNotifications();
     }
 
     async function requestClearAll() {
       const confirmClear = await showModal({ title: 'Clear Data', message: 'Clear all tasks, users, and history?', type: 'confirm', icon: '🗑️' });
       if (confirmClear) {
-        state = { tasks: [], heldTasks: [], users: [] };
+        state = { notifications: [], tasks: [], heldTasks: [], users: [] };
+        pushNotification('rose', '🗑️', 'Workspace Cleared', 'All users, tasks, and historical data were reset.');
         saveData();
       }
     }
